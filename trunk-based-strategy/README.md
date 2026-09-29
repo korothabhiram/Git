@@ -79,6 +79,7 @@ Subjects over 72 characters warn but pass. Put the detail in the body.
 | `githooks/pre-push` | Refuses a push whose target ref is `refs/heads/main`. |
 | `github/workflows/commit-lint.yml` | PR check. Validates branch name, PR title, and every commit subject in the PR range. |
 | `github/rulesets/trunk-protection.json` | Branch protection as code, applied through the GitHub API. |
+| `github/repo-settings.json` | Merge behaviour: squash-only, and delete the branch once a pull request merges. |
 | `github/pull_request_template.md` | Pre-fills the PR body and prompts for the ticket. |
 | `scripts/install-hooks.sh` | Sets `core.hooksPath=.githooks` in a clone. Run once per clone. |
 | `scripts/apply-ruleset.sh` | Creates or updates the ruleset via `gh api`. |
@@ -136,6 +137,35 @@ run will block every PR.
 
 ```bash
 ./scripts/apply-ruleset.sh
+```
+
+## Rulesets vs. repo settings
+
+These are two different things on two different API endpoints, and the
+distinction is the one that trips people up:
+
+- A **ruleset** governs what may *reach* a branch — pull request required,
+  checks passing, history linear. `POST /repos/{slug}/rulesets`.
+- A **repo setting** governs how the repo *behaves* — which merge buttons
+  exist, and whether the head branch is deleted afterwards.
+  `PATCH /repos/{slug}`.
+
+Automatic branch deletion is the second kind, so it cannot be expressed as a
+rule in `trunk-protection.json` no matter how natural that would feel. Both are
+stored as JSON here and both are applied by `apply-ruleset.sh`.
+
+Neither one applies itself when the JSON is merged. The file is the source of
+truth; the script is what reconciles it with the live service. Merging a change
+to either file and expecting GitHub to notice is the most common way to end up
+staring at an empty Rulesets page.
+
+`allow_merge_commit` and `allow_rebase_merge` are false so the UI only offers
+the squash button the ruleset actually permits. Deletion applies to the branch
+on GitHub; your local copy survives, so prune it:
+
+```bash
+git switch main && git pull --prune
+git branch -d TRY-1
 ```
 
 ## Notes on the ruleset
