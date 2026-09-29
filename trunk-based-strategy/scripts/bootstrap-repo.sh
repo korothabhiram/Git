@@ -35,6 +35,7 @@ for target in "$@"; do
 	cp "$src/github/workflows/commit-lint.yml"      "$target/.github/workflows/"
 	cp "$src/github/rulesets/trunk-protection.json" "$target/.github/rulesets/"
 	cp "$src/github/pull_request_template.md"       "$target/.github/"
+	cp "$src/github/repo-settings.json"             "$target/.github/"
 	cp "$src/scripts/install-hooks.sh"              "$target/scripts/"
 	cp "$src/scripts/apply-ruleset.sh"              "$target/scripts/"
 	cp "$src/CONTRIBUTING.md"                       "$target/"
