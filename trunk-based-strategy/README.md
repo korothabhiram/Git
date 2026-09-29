@@ -79,7 +79,7 @@ Subjects over 72 characters warn but pass. Put the detail in the body.
 | `githooks/pre-push` | Refuses a push whose target ref is `refs/heads/main`. |
 | `github/workflows/commit-lint.yml` | PR check. Validates branch name, PR title, and every commit subject in the PR range. |
 | `github/rulesets/trunk-protection.json` | Branch protection as code, applied through the GitHub API. |
-| `github/repo-settings.json` | Merge behaviour: squash-only, and delete the branch once a pull request merges. |
+| `github/repo-settings.json` | Delete the branch once a pull request merges, and allow auto-merge. |
 | `github/pull_request_template.md` | Pre-fills the PR body and prompts for the ticket. |
 | `scripts/install-hooks.sh` | Sets `core.hooksPath=.githooks` in a clone. Run once per clone. |
 | `scripts/apply-ruleset.sh` | Creates or updates the ruleset via `gh api`. |
@@ -159,9 +159,20 @@ truth; the script is what reconciles it with the live service. Merging a change
 to either file and expecting GitHub to notice is the most common way to end up
 staring at an empty Rulesets page.
 
-`allow_merge_commit` and `allow_rebase_merge` are false so the UI only offers
-the squash button the ruleset actually permits. Deletion applies to the branch
-on GitHub; your local copy survives, so prune it:
+`repo-settings.json` deliberately does not set `allow_merge_commit` or
+`allow_rebase_merge`. Turning them off looks tidy -- the merge dropdown would
+only offer the squash button the ruleset permits -- but it adds no enforcement,
+because `allowed_merge_methods` in the ruleset is what actually rejects a
+non-squash merge. It also has a side effect worth avoiding: those same flags
+gate the **Update branch** dropdown, which is a different button. That one
+syncs your branch *from* main when it has fallen behind, offering "Update with
+merge commit" and "Update with rebase". Disabling both repo flags can leave it
+with neither option, and `strict_required_status_checks_policy` means you need
+that button on every branch that falls behind. Enforcement belongs in the
+ruleset; the repo flags only shape the UI, including parts of it you still
+want.
+
+Deletion applies to the branch on GitHub; your local copy survives, so prune it:
 
 ```bash
 git switch main && git pull --prune
